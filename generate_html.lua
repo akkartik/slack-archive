@@ -46,73 +46,7 @@ function main(channels, users, files, output)
     emit_files(cposts, channel, output, channels, users)
   end
 
-  io.stderr:write('index.html files\n')
-  local outfile = io.open(output..'/index.html', 'w')
-  outfile:write('<html>\n')
-  outfile:write('<head><meta charset="UTF-8"></head>\n')
-  outfile:write('<h2>Archives, <a href="https://futureofcoding.org/community">Future of Coding Community</a></h2>\n')
-  primary_channels = {'thinking-together', 'linking-together', 'reading-together', 'share-your-work', 'devlog-together', 'two-minute-week', 'introduce-yourself', 'present-company', 'announcements', 'administrivia'}
-  for _,channel in ipairs(primary_channels) do
-    outfile:write('    <a href="'..channel..'/index.html">'..channel..'</a><br/>\n')
-    emit_channel_index(channel, posts[channel], output, channels, users)
-  end
-  outfile:write('    <hr>\n')
-  secondary_channels = {}
-  for channel,_ in pairs(posts) do
-    if not array.find(primary_channels, channel) then
-      table.insert(secondary_channels, channel)
-    end
-  end
-  table.sort(secondary_channels)
-  for _,channel in ipairs(secondary_channels) do
-    outfile:write('    <a href="'..channel..'/index.html">'..channel..'</a><br/>\n')
-    emit_channel_index(channel, posts[channel], output, channels, users)
-  end
-  outfile:write('<hr>\n')
-  outfile:write('<a href="'..repo..'">download this site</a> (~35MB)\n')
-  outfile:write('</html>\n')
-  outfile:close()
-
-  io.stderr:write('intros by people\n')
-  -- urls for bookmarklets:
-  --  javascript:(function(){ window.open('http://akkartik.name/archives/foc/introduce-yourself/'+((window.getSelection() != '' ? window.getSelection().toString() : prompt('Please enter a name (case sensitive)')).trim().replaceAll(/[^\w_.~-]/g, '-'))+'.html'); })();
-  --  javascript:window.open('http://akkartik.name/archives/foc/introduce-yourself/'+((window.getSelection() != '' ? window.getSelection().toString() : prompt('Please enter a name (case sensitive)')).trim().replaceAll(/[^\w_.~-]/g, '-'))+'.html');undefined
-  -- manual tests:
-  --  selecting text on window
-  --  typing in a name
-  --  typing in a name with spaces
-  --  typing in a name with special characters: ' Santiago Quintana (he/him)  '
-  intros = {}  -- user id -> array of posts in #introduce-yourself
-  -- TODO: handle conflicts in displayed usernames. There are now two 'alex' users.
-  for ts, post in pairs(posts['introduce-yourself']) do
-    if post.user_profile then
-      local id = post.user or post.username
-      local name = users[id].real_name or users[id].name
-      if intros[name] == nil then
-        intros[name] = {post}
-      else
-        table.insert(intros[name], post)
-      end
-    end
-  end
-  for id, userdata in pairs(users) do
-    local name = userdata.real_name or userdata.name
-    local filename = output..'/introduce-yourself/'..encode_for_url(name)..'.html'
-    if intros[name] then
-      table.sort(intros[name], function(a, b) return a.ts < b.ts end)
-      emit_intro(filename, name, intros[name], channels, users)
-    end
-  end
-end
-
-array = {}
-function array.find(arr, elem)
-  for i,x in ipairs(arr) do
-    if x == elem then
-      return i
-    end
-  end
-  return nil
+  emit_channel_index('general', posts['general'], output, channels, users)
 end
 
 function emit_channel_index(channel, posts, output, channels, users)
@@ -238,23 +172,6 @@ function emit_post(outfile, post, site_prefix, channel, channels, users)
   outfile:write('</html>\n')
 end
 
-function emit_intro(outfilename, name, posts, channels, users)
---?   print(outfilename)
-  local outfile = io.open(outfilename, 'w')
-  outfile:write('<html>\n')
-  outfile:write('<head><meta charset="UTF-8"></head>')
-  outfile:write('<h2>Archives, <a href="https://futureofcoding.org/community">Future of Coding Community</a>, introductions by '..name..'</h2>\n')
-  outfile:write('  <table>\n')
-  for _, post in ipairs(posts) do
-    emit_post_body(outfile, post, '../', 'introduce-yourself', channels, users)
-  end
-  outfile:write('  </table>\n')
-  outfile:write('<hr>\n')
-  outfile:write('<a href="'..repo..'">download this site</a> (~35MB)\n')
-  outfile:write('</html>\n')
-  outfile:close()
-end
-
 function emit_post_body(outfile, post, site_prefix, channel, channels, users)
   outfile:write('  <tr>\n')
   outfile:write('    <td style="width:72px; vertical-align:top; padding-bottom:1em">\n')
@@ -352,6 +269,7 @@ function emit_text(outfile, s, channel, channels, users)
     table.insert(tagged_user_ids, user_tag:sub(3, -2))
   end
   for _, tagged_user_id in ipairs(tagged_user_ids) do
+    tagged_user_id = tagged_user_id:gsub('|.*', '')  -- some funky Slack feature
     s = s:gsub('<@'..tagged_user_id..'>', '<span style="background-color:#ccf">@'..name(users[tagged_user_id])..'</span>')
   end
   -- convert links to individual items to go to this archive
@@ -447,16 +365,6 @@ function emit_text(outfile, s, channel, channels, users)
   outfile:write(result..'\n')
 end
 
--- bart's comment at https://stackoverflow.com/questions/1426954/split-string-in-lua
-function split(inputstr, sep)
-  sep=sep or '%s'
-  local t={}
-  for field,s in string.gmatch(inputstr, "([^"..sep.."]*)("..sep.."?)") do
-    table.insert(t,field)
-    if s=="" then return t end
-  end
-end
-
 function postprocess(s)
   s = s:gsub('(%W)_([^_]*)_(%W)', '%1<em>%2</em>%3')
   s = s:gsub('^_([^_]*)_(%W)', '<em>%1</em>%2')
@@ -521,13 +429,6 @@ end
 
 function channel(filename)
   return basename(dirname(filename))
-end
-
--- https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
-function encode_for_url(url)
-  url = url:gsub('([^%w _ %- . ~])', '-')
-  url = url:gsub(' ', '-')
-  return url
 end
 
 function dirname(path)

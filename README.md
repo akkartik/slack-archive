@@ -1,9 +1,4 @@
-[Yet](http://history.futureofcoding.org)
-[another](https://github.com/akkartik/mu/tree/main/browse-slack) browser for
-the [Future of Coding Slack](https://futureofcoding.org/community) archives,
-this time as a purely static set of html files.
-
-This repo is also served online at http://akkartik.name/archives/foc.
+Slack archiver to a purely static set of html files.
 
 # Goals
 
@@ -12,9 +7,6 @@ This repo is also served online at http://akkartik.name/archives/foc.
 
 * Offline first. Hosting on the internet is optional; the primary supported
   way to use this data is locally.
-
-* Git is merely the means of distribution of the data. In particular, don't
-  rely on the commit hashes being immutable.
 
 # Steps
 
@@ -61,11 +53,3 @@ and it'll redirect you to the right page.
 Q: How do I search?
 
 Use [Github search](https://github.com/akkartik/foc-archive)
-
-Q: Is there a way to look up people's introductions?
-
-Create a bookmark with this Javascript:
-
-```
-javascript:window.open('http://akkartik.name/archives/foc/introduce-yourself/'+((window.getSelection() != '' ? window.getSelection().toString() : prompt('Please enter a name (case sensitive)')).trim().replaceAll(/[^\w_.~-]/g, '-'))+'.html');undefined
-```
