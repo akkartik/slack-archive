@@ -54,7 +54,7 @@ function emit_channel_index(channel, posts, output, channels, users)
   local outfile = io.open(output..'/'..channel..'/index.html', 'w')
   outfile:write('<html>\n')
   outfile:write('<head><meta charset="UTF-8"></head>')
-  outfile:write('<h2>Archives, <a href="https://futureofcoding.org/community">Future of Coding Community</a>, #'..channel..', index</h2>\n')
+  outfile:write('<h2>Archives, #'..channel..', index</h2>\n')
   outfile:write('  <table style="table-layout:fixed; width:60em; margin:auto; padding:auto">\n')
   sorted_ts = {}
   for ts,_ in pairs(posts) do
@@ -156,7 +156,7 @@ function emit_post(outfile, post, site_prefix, channel, channels, users)
   if post and post.subtype == 'file_comment' then return end  -- todo
   outfile:write('<html>\n')
   outfile:write('<head><meta charset="UTF-8"></head>')
-  outfile:write('<h2>Archives, <a href="https://futureofcoding.org/community">Future of Coding Community</a>, #'..channel..'</h2>\n')
+  outfile:write('<h2>Archives, #'..channel..'</h2>\n')
   outfile:write('  <table>\n')
   emit_post_body(outfile, post, site_prefix, channel, channels, users)
   if post.comments then
